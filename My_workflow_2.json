@@ -1,0 +1,147 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        20
+      ],
+      "id": "83678b13-28d0-4e32-b963-2d8a2f8b6543"
+    },
+    {
+      "parameters": {
+        "functionCode": "\n                const reportingTime = 9 * 60;\n                const lateCutoff = 9 * 60 + 15;\n\n                return items.map(item => {\n                  const time = new Date(item.json.timestamp);\n                  const minutes = time.getHours() * 60 + time.getMinutes();\n                  let status = '';\n\n                  if (!item.json.timestamp) {\n                    status = 'Absent';\n                  } else if (minutes <= reportingTime) {\n                    status = 'Present';\n                  } else if (minutes <= lateCutoff) {\n                    status = 'Late';\n                  } else {\n                    status = 'Absent';\n                  }\n\n                  return {\n                    json: {\n                      Name: item.json.name,\n                      Time: item.json.timestamp || 'No entry',\n                      Status: status,\n                      Date: new Date().toISOString().split('T')[0]\n                    }\n                  };\n                });\n                "
+      },
+      "name": "Analyze Attendance",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        200,
+        20
+      ],
+      "id": "2f58c47e-3cea-4876-b5e8-ff9ee60774ef"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "sheetId": "GOOGLE_SHEET_ID_HERE",
+        "range": "Sheet1!A1",
+        "options": {}
+      },
+      "name": "Write to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        400,
+        20
+      ],
+      "id": "c8464568-84c6-4396-81ae-27dc52ed24a9",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "xyZflGnhR6mzElkL",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1z_b66BbBGePU4VowOWtG73ClZ1sW1D5p4_9V32x70nw/edit?usp=drivesdk",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -180,
+        20
+      ],
+      "id": "840347c1-29bd-4652-b06d-3131aad3e194",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "EixUUfnsxLw8KHCJ",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        20
+      ],
+      "id": "db03fced-d20c-4996-bbbb-9d84ea980e99",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Attendance": {
+      "main": [
+        [
+          {
+            "node": "Write to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Analyze Attendance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e71b6f46-3504-4e3f-bfe3-cc7258ee8610",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "875f1441cdb56b1d3b6e137938e69be93b050f3a567b9f9f5341b5f0e27b8736"
+  },
+  "id": "8olELqBKNEhtYeln",
+  "tags": []
+}
